@@ -2,8 +2,8 @@
   /* This script grabs the user/pass combo directly
    * from the Question2Answer login page.
    * It uses a service account to find
-   * the user in the ldap database. 
-   * When found the user/pass combo is checked against the 
+   * the user in the ldap database.
+   * When found the user/pass combo is checked against the
    * LDAP authentication source. Following
    * this check, it either creates a SESSION array or
    * a cookie that can be checked by the ldap-login
@@ -62,18 +62,24 @@
         $lname = $name[1];
         $email = $name[2];
         $user = $name[3];
-        
-        if($inremember == 'true') {
-          setcookie("qa-login_lname", $lname, time() + $expire, '/');
-          setcookie("qa-login_fname", $fname, time() + $expire, '/');
-          setcookie("qa-login_email", $email, time() + $expire, '/');
-          setcookie("qa-login_user", $user, time() + $expire, '/');
-        } else {
-          $_SESSION["qa-login_lname"] = $lname;
-          $_SESSION["qa-login_fname"] = $fname;
-          $_SESSION["qa-login_email"] = $email;
-          $_SESSION["qa-login_user"] = $user;
+
+        // Do not login or create account if mail value is NULL
+        if ( '' == $email ){
+          // FIXME somehow print a message
+          qa_redirect('login');
+          exit();
         }
+        // REMY BLOM: DO WHAT THE SCRIPT IS SUPPOSED TO DO, DON'T SET COOKIES?!?!?!
+        // (especially not when they introduce an a possibility to do Cookie-SPOOFING!)
+        $source = 'ldap';
+        $identifier = $email;
+
+        $fields['email'] = $email;
+        $fields['confirmed'] = true;
+        $fields['handle'] = $user;
+        $fields['name'] = $fname . " " . $lname;
+        qa_log_in_external_user($source, $identifier, $fields, $inremember);
+
         $topath=qa_get('to');
         if (isset($topath))
           qa_redirect_raw(qa_path_to_root().$topath); // path already provided as URL fragment
